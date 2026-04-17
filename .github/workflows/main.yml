@@ -1,15 +1,13 @@
-name: Build APK
+name: Build Ghost AI APK
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -20,14 +18,34 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+
       - name: Make gradlew executable
-        run: chmod +x ./gradlew
+        run: chmod +x gradlew
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleDebug --no-daemon
 
-      - name: Upload APK
+      - name: Upload APK to Gofile (Direct Link)
+        id: gofile
+        run: |
+          SERVER=$(curl -s "https://api.gofile.io/servers" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['data']['servers'][0]['name'])")
+          RESULT=$(curl -s -F "file=@app/build/outputs/apk/debug/app-debug.apk" "https://${SERVER}.gofile.io/uploadFile")
+          LINK=$(echo $RESULT | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['data']['downloadPage'])")
+          echo "link=$LINK" >> $GITHUB_OUTPUT
+          echo "## Ghost AI APK Ready" >> $GITHUB_STEP_SUMMARY
+          echo "Download: $LINK" >> $GITHUB_STEP_SUMMARY
+          echo "Ghost AI APK Link: $LINK"
+
+      - name: Upload artifact backup
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug
+          name: ghost-ai-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
