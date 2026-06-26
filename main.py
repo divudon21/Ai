@@ -20,6 +20,8 @@ print("[1] Setting up configs and skills...")
 # --- Environment Secrets Fetch ---
 OR_KEY = os.getenv('OPENROUTER_API_KEY')
 NV_KEY = os.getenv('NVIDIA_API_KEY')
+GEMINI_KEY = os.getenv('GEMINI_API_KEY')
+HF_TOKEN = os.getenv('HF_TOKEN')
 TG_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 TG_USER = os.getenv('TELEGRAM_ALLOWED_USERS') or os.getenv('TELEGRAM_USER_ID')
 
@@ -33,10 +35,12 @@ TG_USER_STR = str(TG_USER).strip()
 with open(os.path.join(hermes_dir, ".env"), "w") as f:
     f.write(f"OPENROUTER_API_KEY={OR_KEY}\n")
     f.write(f"NVIDIA_API_KEY={NV_KEY}\n")
+    f.write(f"GEMINI_API_KEY={GEMINI_KEY}\n")
+    f.write(f"HF_TOKEN={HF_TOKEN}\n")
     f.write(f"TELEGRAM_BOT_TOKEN={TG_TOKEN}\n")
     f.write(f"TELEGRAM_ALLOWED_USERS={TG_USER_STR}\n")
 
-# --- Write config.yaml (NVIDIA as Primary) ---
+# --- Write config.yaml (NVIDIA as Primary, Added Gemini & HF) ---
 with open(os.path.join(hermes_dir, "config.yaml"), "w") as f:
     f.write("""model:
   provider: nvidia
@@ -48,6 +52,10 @@ providers:
     api_key: "${NVIDIA_API_KEY}"
   openrouter:
     api_key: "${OPENROUTER_API_KEY}"
+  gemini:
+    api_key: "${GEMINI_API_KEY}"
+  huggingface:
+    api_key: "${HF_TOKEN}"
 
 terminal:
   backend: local
@@ -82,7 +90,6 @@ with open(skills_path, "w") as f:
 print("✅ Config and Skills created successfully.")
 
 # --- Render Health Check Server ---
-# Render ko web service ke liye ek active port chahiye hota hai, warna deployment fail dikhata hai.
 def run_health_server():
     PORT = int(os.getenv("PORT", 10000))  # Render automatically sets PORT env
     Handler = http.server.SimpleHTTPRequestHandler
