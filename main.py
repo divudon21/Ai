@@ -22,6 +22,7 @@ OR_KEY = os.getenv('OPENROUTER_API_KEY')
 NV_KEY = os.getenv('NVIDIA_API_KEY')
 GEMINI_KEY = os.getenv('GEMINI_API_KEY')
 HF_TOKEN = os.getenv('HF_TOKEN')
+Z_AI_KEY = os.getenv('Z_AI_API_KEY')
 TG_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 TG_USER = os.getenv('TELEGRAM_ALLOWED_USERS') or os.getenv('TELEGRAM_USER_ID')
 
@@ -37,10 +38,11 @@ with open(os.path.join(hermes_dir, ".env"), "w") as f:
     f.write(f"NVIDIA_API_KEY={NV_KEY}\n")
     f.write(f"GEMINI_API_KEY={GEMINI_KEY}\n")
     f.write(f"HF_TOKEN={HF_TOKEN}\n")
+    f.write(f"Z_AI_API_KEY={Z_AI_KEY}\n")
     f.write(f"TELEGRAM_BOT_TOKEN={TG_TOKEN}\n")
     f.write(f"TELEGRAM_ALLOWED_USERS={TG_USER_STR}\n")
 
-# --- Write config.yaml (NVIDIA as Primary, Added Gemini & HF) ---
+# --- Write config.yaml (Added Z-AI Provider) ---
 with open(os.path.join(hermes_dir, "config.yaml"), "w") as f:
     f.write("""model:
   provider: nvidia
@@ -56,6 +58,9 @@ providers:
     api_key: "${GEMINI_API_KEY}"
   huggingface:
     api_key: "${HF_TOKEN}"
+  z_ai:
+    base_url: "https://api.z.ai/v1"
+    api_key: "${Z_AI_API_KEY}"
 
 terminal:
   backend: local
@@ -91,7 +96,7 @@ print("✅ Config and Skills created successfully.")
 
 # --- Render Health Check Server ---
 def run_health_server():
-    PORT = int(os.getenv("PORT", 10000))  # Render automatically sets PORT env
+    PORT = int(os.getenv("PORT", 10000))
     Handler = http.server.SimpleHTTPRequestHandler
     print(f"📡 Starting internal health check server on port {PORT}...")
     try:
