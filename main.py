@@ -79,7 +79,7 @@ memory:
   enabled: true
 
 display:
-  tool_progress: "off"
+  tool_progress: "on"
 
 compression:
   enabled: true
@@ -95,6 +95,7 @@ with open(skills_path, "w") as f:
 - You are a helpful AI assistant with access to local terminal tools.
 - ALWAYS use available tools if the user task requires it.
 - Be concise and efficient.
+- when user ask anything about internet (like whether, any other websites checking fact cheaking extra.)you can directly search never hasitate for web search
 
 ## Core Behavior
 - NEVER say "I cannot do this" or "I am just an AI".
