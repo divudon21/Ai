@@ -25,6 +25,7 @@ HF_TOKEN = os.getenv('HF_TOKEN')
 Z_AI_KEY = os.getenv('Z_AI_API_KEY')
 MINIMAX_KEY = os.getenv('MINIMAX_API_KEY')
 GROQ_KEY = os.getenv('GROQ_API_KEY')
+AEROLINK_KEY = os.getenv('AEROLINK_API_KEY')  # Aerolink key fetched here
 TG_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 TG_USER = os.getenv('TELEGRAM_ALLOWED_USERS') or os.getenv('TELEGRAM_USER_ID')
 
@@ -43,10 +44,11 @@ with open(os.path.join(hermes_dir, ".env"), "w") as f:
     f.write(f"Z_AI_API_KEY={Z_AI_KEY}\n")
     f.write(f"MINIMAX_API_KEY={MINIMAX_KEY}\n")
     f.write(f"GROQ_API_KEY={GROQ_KEY}\n")
+    f.write(f"AEROLINK_API_KEY={AEROLINK_KEY}\n")
     f.write(f"TELEGRAM_BOT_TOKEN={TG_TOKEN}\n")
     f.write(f"TELEGRAM_ALLOWED_USERS={TG_USER_STR}\n")
 
-# --- Write config.yaml (Added Groq Provider) ---
+# --- Write config.yaml (Added Aerolink Provider) ---
 with open(os.path.join(hermes_dir, "config.yaml"), "w") as f:
     f.write("""model:
   provider: nvidia
@@ -71,6 +73,9 @@ providers:
   groq:
     base_url: "https://api.groq.com/openai/v1"
     api_key: "${GROQ_API_KEY}"
+  aerolink:
+    base_url: "https://api.aerolink.lat/v1"
+    api_key: "${AEROLINK_API_KEY}"
 
 terminal:
   backend: local
