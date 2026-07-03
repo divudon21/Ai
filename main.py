@@ -25,7 +25,7 @@ HF_TOKEN = os.getenv('HF_TOKEN')
 Z_AI_KEY = os.getenv('Z_AI_API_KEY')
 MINIMAX_KEY = os.getenv('MINIMAX_API_KEY')
 GROQ_KEY = os.getenv('GROQ_API_KEY')
-AEROLINK_KEY = os.getenv('AEROLINK_API_KEY')  # Aerolink key fetched here
+AEROLINK_KEY = os.getenv('AEROLINK_API_KEY')
 TG_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 TG_USER = os.getenv('TELEGRAM_ALLOWED_USERS') or os.getenv('TELEGRAM_USER_ID')
 
@@ -41,14 +41,14 @@ with open(os.path.join(hermes_dir, ".env"), "w") as f:
     f.write(f"NVIDIA_API_KEY={NV_KEY}\n")
     f.write(f"GEMINI_API_KEY={GEMINI_KEY}\n")
     f.write(f"HF_TOKEN={HF_TOKEN}\n")
-    f.write(f"Z_AI_API_KEY={Z_AI_KEY}\n")
+    f.write(f"Z_AI_KEY={Z_AI_KEY}\n")
     f.write(f"MINIMAX_API_KEY={MINIMAX_KEY}\n")
     f.write(f"GROQ_API_KEY={GROQ_KEY}\n")
     f.write(f"AEROLINK_API_KEY={AEROLINK_KEY}\n")
     f.write(f"TELEGRAM_BOT_TOKEN={TG_TOKEN}\n")
     f.write(f"TELEGRAM_ALLOWED_USERS={TG_USER_STR}\n")
 
-# --- Write config.yaml (Added Aerolink Provider) ---
+# --- Write config.yaml ---
 with open(os.path.join(hermes_dir, "config.yaml"), "w") as f:
     f.write("""model:
   provider: nvidia
@@ -74,8 +74,12 @@ providers:
     base_url: "https://api.groq.com/openai/v1"
     api_key: "${GROQ_API_KEY}"
   aerolink:
-    base_url: "https://api.aerolink.lat/v1"
+    base_url: "https://capi.aerolink.lat/v1"
     api_key: "${AEROLINK_API_KEY}"
+    models:
+      - id: "claude-4.8-opus"
+      - id: "claude-4.6-sonnet"
+      - id: "claude-haiku"
 
 terminal:
   backend: local
