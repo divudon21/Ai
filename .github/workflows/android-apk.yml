@@ -2,53 +2,97 @@ name: Build APKs & Create Release
 
 on:
   push:
-    branches: [ arena/1473ca97-ai ]
+    branches: [ arena/59d42030-ai ]
   workflow_dispatch:
 
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: '17'
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
       - run: |
-          FLUTTER_DIR="$(dirname "$(dirname "$(which flutter)")")"
-          echo "flutter.sdk=$FLUTTER_DIR" > android/local.properties
+          echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
+          cat android/local.properties
       - run: yes | flutter doctor --android-licenses
       - run: flutter pub get
-      - name: Create release signing keystore
+      - name: Install Gradle 8.5
+        run: |
+          curl -fsSL --retry 3 "https://services.gradle.org/distributions/gradle-8.5-bin.zip" -o /tmp/gradle.zip
+          unzip -q /tmp/gradle.zip -d /tmp
+          echo "/tmp/gradle-8.5/bin" >> $GITHUB_PATH
+          gradle --version
+      - name: Create release signing keystore + key.properties
         run: |
           keytool -genkeypair -v \
-            -keystore android/app/upload-key.jks \
+            -keystore android/upload-key.jks \
             -alias upload-key \
             -keyalg RSA -keysize 2048 -validity 10000 \
             -dname "CN=Android Debug,O=Android,C=US" \
             -storepass android -keypass android
-          printf 'storeFile=upload-key.jks\nstorePassword=android\nkeyAlias=upload-key\nkeyPassword=android\n' > android/app/key.properties
-      - run: flutter build apk --split-per-abi --release
-      - run: flutter build apk --release
-      - name: List produced APKs
+          printf 'storeFile=upload-key.jks\nstorePassword=android\nkeyAlias=upload-key\nkeyPassword=android\n' > android/key.properties
+      - name: Build APK with Flutter (verbose)
         run: |
-          echo "=== APKs in build/app/outputs/flutter-apk/ ==="
-          ls -la build/app/outputs/flutter-apk/
-      - name: Upload APKs as artifacts
+          echo "=== Flutter build apk ==="
+          flutter build apk --release --target-platform android-arm64 --verbose 2>&1 | tee /tmp/flutter_build.log
+          echo "=== Flutter exit: ${PIPESTATUS[0]} ==="
+          echo "=== Flutter output ==="
+          cat /tmp/flutter_build.log
+      - name: List ALL files in build outputs
+        run: |
+          echo "=== Files in build/app/outputs/flutter-apk/ ==="
+          ls -laR build/app/outputs/flutter-apk/ 2>/dev/null || echo "Directory not found"
+          echo "=== Files in build/app/outputs/apk/release/ ==="
+          ls -laR build/app/outputs/apk/release/ 2>/dev/null || echo "Directory not found"
+          echo "=== All files matching *release* in build/ ==="
+          find build -name "*release*" -type f 2>/dev/null || echo "No release files"
+          echo "=== All .apk files in workspace ==="
+          find . -name "*.apk" -type f 2>/dev/null || echo "No APKs found"
+      - name: Fallback: Gradle assembleRelease
+        if: failure()
+        run: |
+          echo "=== Flutter didn't produce APK, trying Gradle directly ==="
+          cd android
+          gradle assembleRelease --stacktrace 2>&1 | tee /tmp/gradle_build.log
+          echo "=== Gradle exit: ${PIPESTATUS[0]} ==="
+          echo "=== Gradle output ==="
+          cat /tmp/gradle_build.log
+          echo "=== APK files after Gradle ==="
+          find .. -name "*.apk" -type f 2>/dev/null || echo "No APKs found"
+      - name: Find and copy APK
+        run: |
+          APK_PATH=$(find . -name "*.apk" -type f 2>/dev/null | head -1)
+          if [ -z "$APK_PATH" ]; then
+            echo "ERROR: No APK found anywhere!"
+            exit 1
+          fi
+          echo "FOUND_APK=$APK_PATH" >> $GITHUB_ENV
+          echo "Found APK: $APK_PATH"
+      - name: Copy APK to root
+        run: |
+          cp "${{ env.FOUND_APK }}" ./app-release.apk
+          ls -la ./app-release.apk
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: apks
-          path: |
-            build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
-            build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
-            build/app/outputs/flutter-apk/app-release.apk
-          if-no-files-found: warn
-      - uses: softprops/action-gh-release@v2
+          name: apk-arm64-v8a
+          path: app-release.apk
+          if-no-files-found: error
+      - name: Create GitHub Release
+        if: github.ref == 'refs/heads/arena/59d42030-ai'
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: "v${{ github.run_number }}"
-          files: build/app/outputs/flutter-apk/app-release.apk
+          name: "AI Agent Downloader APK (arm64-v8a)"
+          tag_name: "apk-${{ github.run_id }}"
+          files: app-release.apk
+          fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
