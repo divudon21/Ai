@@ -2,7 +2,7 @@ name: Build APKs & Create Release
 
 on:
   push:
-    branches: [ arena/14c2d171-ai ]
+    branches: [ arena/14c2d171-ai, arena/1473ca97-ai ]
   workflow_dispatch:
 
 permissions:
