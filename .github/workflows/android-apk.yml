@@ -39,39 +39,42 @@ jobs:
             -dname "CN=Android Debug,O=Android,C=US" \
             -storepass android -keypass android
           printf 'storeFile=upload-key.jks\nstorePassword=android\nkeyAlias=upload-key\nkeyPassword=android\n' > android/key.properties
-      - name: Build APK via Flutter (capture output)
+      - name: Build APK
         run: |
-          flutter build apk --release --verbose 2>&1 | tee /tmp/flutter_build.log
-          echo "=== Build exit: ${PIPESTATUS[0]} ==="
-          echo "=== APK path references in output ==="
-          grep -o 'build[^ ]*\.apk' /tmp/flutter_build.log || echo "No .apk path in output"
-          echo "=== Looking for 'Built' message ==="
-          grep -i 'built' /tmp/flutter_build.log || echo "No 'built' message"
-      - name: Find and copy APK
+          flutter build apk --release --stacktrace 2>&1 | tee /tmp/flutter_build.log
+          echo "=== EXIT: ${PIPESTATUS[0]} ==="
+          echo "=== APK files in flutter output ==="
+          grep -i 'apk' /tmp/flutter_build.log | head -20 || true
+      - name: Find APK anywhere
         run: |
-          echo "=== Searching workspace for APKs ==="
+          echo "=== Searching workspace ==="
           find . -name "*.apk" -type f 2>/dev/null || echo "No APKs in workspace"
-          echo "=== Searching common locations ==="
-          find /home /tmp /var -name "*.apk" -type f 2>/dev/null || echo "No APKs in /home, /tmp, /var"
+          echo "=== Searching /tmp ==="
+          find /tmp -name "*.apk" -type f 2>/dev/null || echo "No APKs in /tmp"
+          echo "=== Searching /home ==="
+          find /home -name "*.apk" -type f 2>/dev/null || echo "No APKs in /home"
           APK_PATH=$(find / -name "app-release.apk" -type f 2>/dev/null | head -1)
           if [ -z "$APK_PATH" ]; then
-            echo "ERROR: app-release.apk not found anywhere on filesystem!"
+            echo "ERROR: app-release.apk not found anywhere!"
             exit 1
           fi
-          echo "Found APK: $APK_PATH"
-          cp "$APK_PATH" ./app-release.apk
+          echo "FOUND_APK=$APK_PATH" >> $GITHUB_ENV
+          echo "Found APK at: $APK_PATH"
+      - name: Copy APK to root
+        run: |
+          cp "${{ env.FOUND_APK }}" ./app-release.apk
           ls -la ./app-release.apk
-      - name: Upload APK as artifact
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: apk
+          name: apk-arm64-v8a
           path: app-release.apk
           if-no-files-found: error
       - name: Create GitHub Release
         if: github.ref == 'refs/heads/arena/59d42030-ai'
         uses: softprops/action-gh-release@v2
         with:
-          name: "AI Agent Downloader APK"
+          name: "AI Agent Downloader APK (arm64-v8a)"
           tag_name: "apk-${{ github.run_id }}"
           files: app-release.apk
           fail_on_unmatched_files: false
