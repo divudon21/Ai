@@ -19,6 +19,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          flutter-version: '3.22.0'
       - run: |
           echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
           cat android/local.properties
@@ -39,30 +40,40 @@ jobs:
             -dname "CN=Android Debug,O=Android,C=US" \
             -storepass android -keypass android
           printf 'storeFile=upload-key.jks\nstorePassword=android\nkeyAlias=upload-key\nkeyPassword=android\n' > android/key.properties
-      - name: Build APK via Gradle assembleRelease
+      - name: Build APK with Flutter 3.22.0
         run: |
-          echo "=== Running Gradle assembleRelease ==="
-          cd android
-          gradle assembleRelease --stacktrace 2>&1 | tee /tmp/gradle_build.log
-          echo "=== Gradle exit: ${PIPESTATUS[0]} ==="
-          echo "=== APK files after Gradle ==="
-          find .. -name "*.apk" -type f 2>/dev/null || echo "No APKs found"
-      - name: Find and copy APK
+          echo "=== Flutter version ==="
+          flutter --version
+          echo "=== Building APK ==="
+          flutter build apk --release --verbose 2>&1 | tee /tmp/flutter_build.log
+          echo "=== Flutter exit: ${PIPESTATUS[0]} ==="
+          echo "=== Full Flutter output ==="
+          cat /tmp/flutter_build.log
+      - name: Search for APK everywhere
+        run: |
+          echo "=== Searching workspace for APKs ==="
+          find . -name "*.apk" -type f 2>/dev/null || echo "No APKs in workspace"
+          echo "=== Searching /tmp for APKs ==="
+          find /tmp -name "*.apk" -type f 2>/dev/null || echo "No APKs in /tmp"
+          echo "=== Searching /home for APKs ==="
+          find /home -name "*.apk" -type f 2>/dev/null || echo "No APKs in /home"
+          echo "=== Listing build/app/outputs/flutter-apk/ ==="
+          ls -laR build/app/outputs/flutter-apk/ 2>/dev/null || echo "Not found"
+          echo "=== Listing build/app/outputs/apk/release/ ==="
+          ls -laR build/app/outputs/apk/release/ 2>/dev/null || echo "Not found"
+          echo "=== All files in build/ ==="
+          find build -type f 2>/dev/null | head -30 || echo "No files in build/"
+      - name: Copy APK if found
         run: |
           APK_PATH=$(find . -name "*.apk" -type f 2>/dev/null | head -1)
           if [ -z "$APK_PATH" ]; then
-            echo "ERROR: No APK found anywhere!"
-            echo "=== Gradle build log ==="
-            cat /tmp/gradle_build.log
+            echo "ERROR: No APK found!"
             exit 1
           fi
           echo "FOUND_APK=$APK_PATH" >> $GITHUB_ENV
-          echo "Found APK: $APK_PATH"
-      - name: Copy APK to root
-        run: |
-          cp "${{ env.FOUND_APK }}" ./app-release.apk
-          ls -la ./app-release.apk
-      - name: Upload APK artifact
+          echo "Found: $APK_PATH"
+          cp "$APK_PATH" ./app-release.apk
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: apk-arm64-v8a
