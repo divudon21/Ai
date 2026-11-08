@@ -4,7 +4,7 @@
 # This lets `flutter build apk` invoke Gradle without a preinstalled Gradle.
 set -e
 
-GRADLE_VERSION=8.5
+GRADLE_VERSION=8.0
 GRADLE_DIR="${GRADLE_HOME:-/tmp/gradle-${GRADLE_VERSION}}"
 GRADLE_BIN="$GRADLE_DIR/bin/gradle"
 
