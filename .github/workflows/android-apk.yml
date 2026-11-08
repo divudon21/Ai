@@ -47,15 +47,22 @@ jobs:
             echo "=== Attempt $i failed, retrying in 10s ==="
             sleep 10
           done
-      - name: List produced APKs
+      - name: Find APKs
+        run: |
+          echo "=== Searching for APKs ==="
+          find build -name "*.apk" -type f 2>/dev/null || echo "No APKs found in build/"
+          find . -name "*.apk" -type f 2>/dev/null | head -20 || true
+      - name: List produced APKs (non-fatal)
         run: |
           echo "=== APKs in build/app/outputs/flutter-apk/ ==="
-          ls -la build/app/outputs/flutter-apk/
+          ls -la build/app/outputs/flutter-apk/ 2>/dev/null || echo "Directory not found, checking other paths"
+          ls -la build/app/outputs/apk/release/ 2>/dev/null || echo "Directory not found"
+        continue-on-error: true
       - name: Upload APK as artifact
         uses: actions/upload-artifact@v4
         with:
           name: apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: build/**/app-release.apk
           if-no-files-found: warn
       - name: Create GitHub Release
         if: github.ref == 'refs/heads/arena/59d42030-ai'
@@ -65,6 +72,7 @@ jobs:
           tag_name: "apk-${{ github.run_id }}"
           files: |
             build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/apk/release/app-release.apk
           fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
