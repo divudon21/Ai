@@ -39,30 +39,39 @@ jobs:
             -dname "CN=Android Debug,O=Android,C=US" \
             -storepass android -keypass android
           printf 'storeFile=upload-key.jks\nstorePassword=android\nkeyAlias=upload-key\nkeyPassword=android\n' > android/key.properties
-      - name: Build APK arm64-v8a (verbose)
+      - name: Build APK with Flutter (verbose)
         run: |
-          echo "=== Building arm64-v8a APK ==="
+          echo "=== Flutter build apk ==="
           flutter build apk --release --target-platform android-arm64 --verbose 2>&1 | tee /tmp/flutter_build.log
-          echo "=== Flutter build exit: ${PIPESTATUS[0]} ==="
-          echo "=== Last 50 lines of Flutter output ==="
-          tail -50 /tmp/flutter_build.log
-      - name: List ALL build output files
+          echo "=== Flutter exit: ${PIPESTATUS[0]} ==="
+          echo "=== Flutter output ==="
+          cat /tmp/flutter_build.log
+      - name: List ALL files in build outputs
         run: |
-          echo "=== All files in build/app/outputs ==="
-          find build/app/outputs -type f 2>/dev/null || echo "No build/app/outputs"
-          echo "=== All .apk files anywhere ==="
-          find . -name "*.apk" -type f 2>/dev/null || echo "No .apk files"
-          echo "=== All .aab files anywhere ==="
-          find . -name "*.aab" -type f 2>/dev/null || echo "No .aab files"
-          echo "=== All files in build/ (first 50) ==="
-          find build -type f 2>/dev/null | head -50 || echo "No files in build/"
-      - name: Find APK anywhere
+          echo "=== Files in build/app/outputs/flutter-apk/ ==="
+          ls -laR build/app/outputs/flutter-apk/ 2>/dev/null || echo "Directory not found"
+          echo "=== Files in build/app/outputs/apk/release/ ==="
+          ls -laR build/app/outputs/apk/release/ 2>/dev/null || echo "Directory not found"
+          echo "=== All files matching *release* in build/ ==="
+          find build -name "*release*" -type f 2>/dev/null || echo "No release files"
+          echo "=== All .apk files in workspace ==="
+          find . -name "*.apk" -type f 2>/dev/null || echo "No APKs found"
+      - name: Fallback: Gradle assembleRelease
+        if: failure()
+        run: |
+          echo "=== Flutter didn't produce APK, trying Gradle directly ==="
+          cd android
+          gradle assembleRelease --stacktrace 2>&1 | tee /tmp/gradle_build.log
+          echo "=== Gradle exit: ${PIPESTATUS[0]} ==="
+          echo "=== Gradle output ==="
+          cat /tmp/gradle_build.log
+          echo "=== APK files after Gradle ==="
+          find .. -name "*.apk" -type f 2>/dev/null || echo "No APKs found"
+      - name: Find and copy APK
         run: |
           APK_PATH=$(find . -name "*.apk" -type f 2>/dev/null | head -1)
           if [ -z "$APK_PATH" ]; then
             echo "ERROR: No APK found anywhere!"
-            echo "=== Flutter build log ==="
-            cat /tmp/flutter_build.log
             exit 1
           fi
           echo "FOUND_APK=$APK_PATH" >> $GITHUB_ENV
