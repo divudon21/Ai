@@ -5,8 +5,17 @@ if (localPropertiesFile.exists()) {
 }
 
 def flutterRoot = localProperties.getProperty('flutter.sdk') ?: 'flutter'
-
 load from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
+
+def flutterVersionCode = localProperties.getProperty('flutterVersionCode')
+if (flutterVersionCode == null) {
+    flutterVersionCode = '1'
+}
+
+def flutterVersionName = localProperties.getProperty('flutterVersionName')
+if (flutterVersionName == null) {
+    flutterVersionName = '1.0'
+}
 
 def keyPropertiesFile = rootProject.file('key.properties')
 def keyProperties = new Properties()
@@ -15,7 +24,6 @@ if (keyPropertiesFile.exists()) {
 }
 
 apply plugin: 'com.android.application'
-apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 apply plugin: 'org.jetbrains.kotlin.android'
 
 android {
