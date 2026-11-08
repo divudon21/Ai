@@ -39,10 +39,14 @@ jobs:
             -dname "CN=Android Debug,O=Android,C=US" \
             -storepass android -keypass android
           printf 'storeFile=upload-key.jks\nstorePassword=android\nkeyAlias=upload-key\nkeyPassword=android\n' > android/key.properties
-      - name: Debug build warm-up (caches Gradle)
-        run: flutter build apk --debug --stacktrace
-      - name: Build fat APK (all ABIs)
-        run: flutter build apk --release --stacktrace
+      - name: Build APK (with retry)
+        run: |
+          for i in 1 2 3; do
+            echo "=== Build attempt $i ==="
+            flutter build apk --release --stacktrace && break
+            echo "=== Attempt $i failed, retrying in 10s ==="
+            sleep 10
+          done
       - name: Build universal APK
         run: flutter build apk --release --universal --stacktrace
       - name: List produced APKs
