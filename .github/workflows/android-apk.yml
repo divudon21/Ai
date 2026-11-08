@@ -31,6 +31,7 @@ jobs:
             -dname "CN=Android Debug,O=Android,C=US" \
             -storepass android -keypass android
           printf 'storeFile=upload-key.jks\nstorePassword=android\nkeyAlias=upload-key\nkeyPassword=android\n' > android/app/key.properties
+      - run: flutter build apk --split-per-abi --release
       - run: flutter build apk --release
       - uses: softprops/action-gh-release@v2
         with:
