@@ -4,7 +4,11 @@ if (localPropertiesFile.exists()) {
     localPropertiesFile.withReader('UTF-8') { localProperties.load(it) }
 }
 
-def flutterRoot = localProperties.getProperty('flutter.sdk') ?: 'flutter'
+def flutterRoot = localProperties.getProperty('flutter.sdk')
+if (flutterRoot == null) {
+    throw new GradleException("Flutter SDK not found. Define location with flutter.sdk in the local.properties file.")
+}
+
 def flutterVersionCode = localProperties.getProperty('flutterVersionCode')
 if (flutterVersionCode == null) {
     flutterVersionCode = '1'
@@ -18,9 +22,38 @@ apply plugin: 'com.android.application'
 apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 apply plugin: 'org.jetbrains.kotlin.android'
 
+def keystoreFile = rootProject.file('key.properties')
+def signingConfigs = []
+if (keystoreFile.exists()) {
+    def keyProperties = new Properties()
+    keystoreFile.withReader('UTF-8') { keyProperties.load(it) }
+    def storeFile = rootProject.file(keyProperties.getProperty('storeFile'))
+    def storePassword = keyProperties.getProperty('storePassword')
+    def keyAlias = keyProperties.getProperty('keyAlias')
+    def keyPassword = keyProperties.getProperty('keyPassword')
+    if (storeFile != null && storeFile.exists() && storePassword != null && keyAlias != null && keyPassword != null) {
+        signingConfigs << signingConfigs.create('release') {
+            storeFile storeFile
+            storePassword storePassword
+            keyAlias keyAlias
+            keyPassword keyPassword
+        }
+    }
+}
+
 android {
     compileSdk flutter.compileSdkVersion
+    ndkVersion flutter.ndkVersion
     namespace 'com.example.ai_agent_downloader'
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
 
     defaultConfig {
         applicationId 'com.example.ai_agent_downloader'
@@ -28,6 +61,21 @@ android {
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+    }
+
+    buildTypes {
+        release {
+            if (signingConfigs.containsKey('release')) {
+                signingConfig signingConfigs.release
+            } else {
+                signingConfig signingConfigs.debug
+            }
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            signingConfig signingConfigs.debug
+        }
     }
 }
 
