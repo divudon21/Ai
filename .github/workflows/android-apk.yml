@@ -39,27 +39,32 @@ jobs:
             -dname "CN=Android Debug,O=Android,C=US" \
             -storepass android -keypass android
           printf 'storeFile=upload-key.jks\nstorePassword=android\nkeyAlias=upload-key\nkeyPassword=android\n' > android/key.properties
-      - name: Build APK
+      - name: Build APK arm64-v8a
         run: |
-          flutter build apk --release --stacktrace 2>&1 | tee /tmp/flutter_build.log
-          echo "=== EXIT: ${PIPESTATUS[0]} ==="
-          echo "=== APK files in flutter output ==="
-          grep -i 'apk' /tmp/flutter_build.log | head -20 || true
+          echo "=== Building arm64-v8a APK ==="
+          flutter build apk --release --target-platform android-arm64 --stacktrace 2>&1 | tee /tmp/flutter_build.log
+          echo "=== Flutter build exit: ${PIPESTATUS[0]} ==="
+          echo "=== Flutter output mentioning apk ==="
+          grep -i 'apk\|built\|output' /tmp/flutter_build.log | head -30 || true
+      - name: List ALL files in build outputs
+        run: |
+          echo "=== Recursive listing of build/app/outputs ==="
+          find build/app/outputs -type f 2>/dev/null || echo "No build/app/outputs"
+          echo "=== All .apk files in workspace ==="
+          find . -name "*.apk" -type f 2>/dev/null || echo "No APKs found"
+          echo "=== All files in build/ ==="
+          find build -type f 2>/dev/null | head -50 || echo "No files in build/"
       - name: Find APK anywhere
         run: |
-          echo "=== Searching workspace ==="
-          find . -name "*.apk" -type f 2>/dev/null || echo "No APKs in workspace"
-          echo "=== Searching /tmp ==="
-          find /tmp -name "*.apk" -type f 2>/dev/null || echo "No APKs in /tmp"
-          echo "=== Searching /home ==="
-          find /home -name "*.apk" -type f 2>/dev/null || echo "No APKs in /home"
-          APK_PATH=$(find / -name "app-release.apk" -type f 2>/dev/null | head -1)
+          APK_PATH=$(find . -name "*.apk" -type f 2>/dev/null | head -1)
           if [ -z "$APK_PATH" ]; then
-            echo "ERROR: app-release.apk not found anywhere!"
+            echo "ERROR: No APK found anywhere in workspace!"
+            echo "=== Dumping flutter build log ==="
+            cat /tmp/flutter_build.log || true
             exit 1
           fi
           echo "FOUND_APK=$APK_PATH" >> $GITHUB_ENV
-          echo "Found APK at: $APK_PATH"
+          echo "Found APK: $APK_PATH"
       - name: Copy APK to root
         run: |
           cp "${{ env.FOUND_APK }}" ./app-release.apk
