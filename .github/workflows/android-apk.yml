@@ -40,30 +40,31 @@ jobs:
             -dname "CN=Android Debug,O=Android,C=US" \
             -storepass android -keypass android
           printf 'storeFile=upload-key.jks\nstorePassword=android\nkeyAlias=upload-key\nkeyPassword=android\n' > android/key.properties
-      - name: Build APK via Gradle with --info
+      - name: Build APK with Flutter
         run: |
-          echo "=== Gradle assembleRelease --info ==="
-          cd android
-          gradle assembleRelease --info --stacktrace 2>&1 | tee /tmp/gradle_build.log
-          echo "=== Gradle exit: ${PIPESTATUS[0]} ==="
-          echo "=== Looking for APK output in Gradle log ==="
-          grep -i 'apk\|output\|built' /tmp/gradle_build.log | head -20 || true
-      - name: Exhaustive APK search
+          echo "=== Building APK ==="
+          flutter build apk --release --verbose 2>&1 | tee /tmp/flutter_build.log
+          echo "=== Flutter exit: ${PIPESTATUS[0]} ==="
+          echo "=== Flutter output mentioning APK/Gradle/Built ==="
+          grep -iE 'apk|gradle|built|output|wrote|writing' /tmp/flutter_build.log | head -20 || echo "No matches"
+      - name: Search for APK everywhere
         run: |
-          echo "=== Searching ALL filesystems for APK ==="
-          find / -name "*.apk" -type f 2>/dev/null || echo "No APKs found anywhere on filesystem"
+          echo "=== Searching common dirs for APKs ==="
+          find /home /tmp /workspace $FLUTTER_ROOT -name "*.apk" -type f 2>/dev/null || echo "No APKs in common dirs"
           echo "=== All files in build/app/outputs ==="
           find build/app/outputs -type f 2>/dev/null || echo "No build/app/outputs"
           echo "=== All files in android/build ==="
           find android/build -type f 2>/dev/null || echo "No android/build"
       - name: Copy APK if found
         run: |
-          APK_PATH=$(find . -name "*.apk" -type f 2>/dev/null | head -1)
+          APK_PATH=$(find /home /tmp /workspace $FLUTTER_ROOT -name "*.apk" -type f 2>/dev/null | head -1)
           if [ -z "$APK_PATH" ]; then
-            APK_PATH=$(find / -name "*.apk" -type f 2>/dev/null | head -1)
+            APK_PATH=$(find . -name "*.apk" -type f 2>/dev/null | head -1)
           fi
           if [ -z "$APK_PATH" ]; then
             echo "ERROR: No APK found anywhere!"
+            echo "=== Flutter build log ==="
+            cat /tmp/flutter_build.log
             exit 1
           fi
           echo "FOUND_APK=$APK_PATH" >> $GITHUB_ENV
