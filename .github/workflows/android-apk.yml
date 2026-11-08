@@ -1,3 +1,4 @@
+# Error capture workflow
 name: Build APKs & Create Release
 
 on:
