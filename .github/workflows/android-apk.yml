@@ -47,11 +47,15 @@ jobs:
             echo "=== Attempt $i failed, retrying in 10s ==="
             sleep 10
           done
-      - name: Copy APK to known location
+      - name: Find and copy APK
         run: |
-          APK_PATH=$(find build -name "app-release.apk" -type f 2>/dev/null | head -1)
+          echo "=== All APK files found ==="
+          find . -name "*.apk" -type f 2>/dev/null || echo "No APKs found"
+          echo "=== Looking in build/ ==="
+          find build -name "*.apk" -type f 2>/dev/null || echo "No APKs in build/"
+          APK_PATH=$(find . -name "app-release.apk" -type f 2>/dev/null | head -1)
           if [ -z "$APK_PATH" ]; then
-            echo "ERROR: No APK found!"
+            echo "ERROR: app-release.apk not found!"
             exit 1
           fi
           echo "Found APK: $APK_PATH"
