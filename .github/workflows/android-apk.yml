@@ -38,23 +38,36 @@ jobs:
       - name: Get Flutter dependencies
         run: flutter pub get
 
-      - name: Install Gradle 8.5 (runner has full internet)
+      - name: Install Gradle 8.5
         run: |
-          GRADLE_VERSION=8.5
-          curl -fsSL -o /tmp/gradle.zip "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip"
+          curl -fsSL -o /tmp/gradle.zip "https://services.gradle.org/distributions/gradle-8.5-bin.zip"
           unzip -q /tmp/gradle.zip -d /tmp
-          echo "GRADLE_HOME=/tmp/gradle-${GRADLE_VERSION}" >> "$GITHUB_ENV"
-          echo "/tmp/gradle-${GRADLE_VERSION}/bin" >> "$GITHUB_PATH"
+          echo "GRADLE_HOME=/tmp/gradle-8.5" >> "$GITHUB_ENV"
+          echo "/tmp/gradle-8.5/bin" >> "$GITHUB_PATH"
           gradle --version
 
       - name: Provide ./gradlew (delegate to installed Gradle)
         run: |
           cat > android/gradlew <<'SH'
 #!/bin/sh
-# Delegate to the Gradle installed above (no wrapper jar download needed).
 exec "${GRADLE_HOME:-/tmp/gradle-8.5}/bin/gradle" "$@"
 SH
           chmod +x android/gradlew
+
+      - name: Create release signing keystore + key.properties
+        run: |
+          keytool -genkeypair -v \
+            -keystore android/app/upload-key.jks \
+            -alias upload-key \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US" \
+            -storepass android -keypass android
+          cat > android/app/key.properties <<EOF
+          storeFile=upload-key.jks
+          storePassword=android
+          keyAlias=upload-key
+          keyPassword=android
+          EOF
 
       - name: Build split APKs (armeabi-v7a + arm64-v8a)
         run: flutter build apk --split-per-abi --release
