@@ -1,0 +1,85 @@
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { localProperties.load(it) }
+}
+
+def flutterRoot = localProperties.getProperty('flutter.sdk') ?: 'flutter'
+
+load from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
+
+def keyPropertiesFile = rootProject.file('key.properties')
+def keyProperties = new Properties()
+if (keyPropertiesFile.exists()) {
+    keyPropertiesFile.withReader('UTF-8') { keyProperties.load(it) }
+}
+
+apply plugin: 'com.android.application'
+apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
+apply plugin: 'org.jetbrains.kotlin.android'
+
+android {
+    namespace 'com.example.ai_agent_downloader'
+    compileSdk flutter.compileSdkVersion
+
+    lintOptions {
+        disable 'InvalidPackage'
+    }
+
+    defaultConfig {
+        applicationId 'com.example.ai_agent_downloader'
+        minSdkVersion flutter.minSdkVersion
+        targetSdkVersion flutter.targetSdkVersion
+        versionCode flutterVersionCode.toInteger()
+        versionName flutterVersionName
+    }
+
+    signingConfigs {
+        release {
+            if (keyPropertiesFile.exists()) {
+                def storeFileProp = keyProperties.getProperty('storeFile')
+                storeFile = storeFileProp ? file(storeFileProp) : null
+                storePassword = keyProperties.getProperty('storePassword', '')
+                keyAlias = keyProperties.getProperty('keyAlias', '')
+                keyPassword = keyProperties.getProperty('keyPassword', '')
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    /// Build separate APKs per ABI with `flutter build apk --split-per-abi`.
+    /// Produces: app-armeabi-v7a-release.apk and app-arm64-v8a-release.apk.
+    /// A separate universal (fat) APK is produced by `flutter build apk`.
+    splits {
+        abi {
+            enable true
+            reset()
+            include 'armeabi-v7a', 'arm64-v8a'
+            universalApk false
+        }
+    }
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
+    implementation 'androidx.core:core-ktx:1.10.1'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.1.0'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.2'
+    implementation 'androidx.activity:activity:1.8.2'
+    implementation 'androidx.fragment:fragment:1.6.2'
+    implementation 'androidx.webkit:webkit:1.5.0'
+    implementation 'androidx.annotation:annotation:1.7.0'
+    implementation 'androidx.collection:collection-ktx:1.4.0'
+}
+
+flutter {
+    source '../..'
+}

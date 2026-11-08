@@ -1,0 +1,32 @@
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.dart_tool/package_config.json
+.packages
+build/
+.idea/
+*.iml
+*.iws
+*.iml.*
+*.ipr
+.DS_Store
+*.log
+
+# Android
+android/local.properties
+android/app/key.properties
+android/app/upload-key.jks
+android/app/build/
+android/gradle/
+android/gradlew
+android/gradlew.bat
+
+# Flutter generated
+android/app/src/main/java/io/flutter/plugins/generated_plugin_registrant.java
+android/app/src/main/kotlin/io/flutter/plugins/generated_plugin_registrant.kt
+
+# Release artifacts (kept out of git; uploaded to GitHub Releases via workflow)
+*.apk
+*.aab
+release/
