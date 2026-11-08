@@ -19,8 +19,8 @@ jobs:
           channel: 'stable'
           flutter-version: '3.22.0'
       - run: |
-          FLUTTER_DIR="$(dirname "$(dirname "$(which flutter)")")"
-          echo "flutter.sdk=$FLUTTER_DIR" > android/local.properties
+          echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
+          cat android/local.properties
       - run: yes | flutter doctor --android-licenses
       - run: flutter pub get
       - name: Install Gradle 8.0
