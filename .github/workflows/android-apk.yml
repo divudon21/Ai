@@ -22,15 +22,15 @@ jobs:
           echo "flutter.sdk=$FLUTTER_DIR" > android/local.properties
       - run: yes | flutter doctor --android-licenses
       - run: flutter pub get
-      - name: Create release signing keystore
+      - name: Create release signing keystore + key.properties
         run: |
           keytool -genkeypair -v \
-            -keystore android/app/upload-key.jks \
+            -keystore android/upload-key.jks \
             -alias upload-key \
             -keyalg RSA -keysize 2048 -validity 10000 \
             -dname "CN=Android Debug,O=Android,C=US" \
             -storepass android -keypass android
-          printf 'storeFile=upload-key.jks\nstorePassword=android\nkeyAlias=upload-key\nkeyPassword=android\n' > android/app/key.properties
+          printf 'storeFile=upload-key.jks\nstorePassword=android\nkeyAlias=upload-key\nkeyPassword=android\n' > android/key.properties
       - run: flutter build apk --split-per-abi --release
       - run: flutter build apk --release
       - name: List produced APKs
