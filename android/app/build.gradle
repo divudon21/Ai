@@ -22,28 +22,8 @@ apply plugin: 'com.android.application'
 apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 apply plugin: 'org.jetbrains.kotlin.android'
 
-def keystoreFile = rootProject.file('key.properties')
-def signingConfigs = []
-if (keystoreFile.exists()) {
-    def keyProperties = new Properties()
-    keystoreFile.withReader('UTF-8') { keyProperties.load(it) }
-    def storeFile = rootProject.file(keyProperties.getProperty('storeFile'))
-    def storePassword = keyProperties.getProperty('storePassword')
-    def keyAlias = keyProperties.getProperty('keyAlias')
-    def keyPassword = keyProperties.getProperty('keyPassword')
-    if (storeFile != null && storeFile.exists() && storePassword != null && keyAlias != null && keyPassword != null) {
-        signingConfigs << signingConfigs.create('release') {
-            storeFile storeFile
-            storePassword storePassword
-            keyAlias keyAlias
-            keyPassword keyPassword
-        }
-    }
-}
-
 android {
     compileSdk flutter.compileSdkVersion
-    ndkVersion flutter.ndkVersion
     namespace 'com.example.ai_agent_downloader'
 
     compileOptions {
@@ -65,17 +45,29 @@ android {
 
     buildTypes {
         release {
-            if (signingConfigs.containsKey('release')) {
-                signingConfig signingConfigs.release
-            } else {
-                signingConfig signingConfigs.debug
-            }
+            signingConfig signingConfigs.debug
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
         debug {
             signingConfig signingConfigs.debug
         }
+    }
+
+    // Configure release signing from key.properties (created by CI workflow)
+    def keystoreFile = rootProject.file('key.properties')
+    if (keystoreFile.exists()) {
+        def keyProperties = new Properties()
+        keystoreFile.withReader('UTF-8') { keyProperties.load(it) }
+        signingConfigs {
+            release {
+                keyAlias keyProperties['keyAlias']
+                keyPassword keyProperties['keyPassword']
+                storeFile rootProject.file(keyProperties['storeFile'])
+                storePassword keyProperties['storePassword']
+            }
+        }
+        buildTypes.release.signingConfig = signingConfigs.release
     }
 }
 
