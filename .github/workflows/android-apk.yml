@@ -40,40 +40,37 @@ jobs:
             -dname "CN=Android Debug,O=Android,C=US" \
             -storepass android -keypass android
           printf 'storeFile=upload-key.jks\nstorePassword=android\nkeyAlias=upload-key\nkeyPassword=android\n' > android/key.properties
-      - name: Build APK with Flutter 3.22.0
+      - name: Build APK via Gradle with --info
         run: |
-          echo "=== Flutter version ==="
-          flutter --version
-          echo "=== Building APK ==="
-          flutter build apk --release --verbose 2>&1 | tee /tmp/flutter_build.log
-          echo "=== Flutter exit: ${PIPESTATUS[0]} ==="
-          echo "=== Full Flutter output ==="
-          cat /tmp/flutter_build.log
-      - name: Search for APK everywhere
+          echo "=== Gradle assembleRelease --info ==="
+          cd android
+          gradle assembleRelease --info --stacktrace 2>&1 | tee /tmp/gradle_build.log
+          echo "=== Gradle exit: ${PIPESTATUS[0]} ==="
+          echo "=== Looking for APK output in Gradle log ==="
+          grep -i 'apk\|output\|built' /tmp/gradle_build.log | head -20 || true
+      - name: Exhaustive APK search
         run: |
-          echo "=== Searching workspace for APKs ==="
-          find . -name "*.apk" -type f 2>/dev/null || echo "No APKs in workspace"
-          echo "=== Searching /tmp for APKs ==="
-          find /tmp -name "*.apk" -type f 2>/dev/null || echo "No APKs in /tmp"
-          echo "=== Searching /home for APKs ==="
-          find /home -name "*.apk" -type f 2>/dev/null || echo "No APKs in /home"
-          echo "=== Listing build/app/outputs/flutter-apk/ ==="
-          ls -laR build/app/outputs/flutter-apk/ 2>/dev/null || echo "Not found"
-          echo "=== Listing build/app/outputs/apk/release/ ==="
-          ls -laR build/app/outputs/apk/release/ 2>/dev/null || echo "Not found"
-          echo "=== All files in build/ ==="
-          find build -type f 2>/dev/null | head -30 || echo "No files in build/"
+          echo "=== Searching ALL filesystems for APK ==="
+          find / -name "*.apk" -type f 2>/dev/null || echo "No APKs found anywhere on filesystem"
+          echo "=== All files in build/app/outputs ==="
+          find build/app/outputs -type f 2>/dev/null || echo "No build/app/outputs"
+          echo "=== All files in android/build ==="
+          find android/build -type f 2>/dev/null || echo "No android/build"
       - name: Copy APK if found
         run: |
           APK_PATH=$(find . -name "*.apk" -type f 2>/dev/null | head -1)
           if [ -z "$APK_PATH" ]; then
-            echo "ERROR: No APK found!"
+            APK_PATH=$(find / -name "*.apk" -type f 2>/dev/null | head -1)
+          fi
+          if [ -z "$APK_PATH" ]; then
+            echo "ERROR: No APK found anywhere!"
             exit 1
           fi
           echo "FOUND_APK=$APK_PATH" >> $GITHUB_ENV
-          echo "Found: $APK_PATH"
+          echo "Found APK: $APK_PATH"
           cp "$APK_PATH" ./app-release.apk
-      - name: Upload APK
+          ls -la ./app-release.apk
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: apk-arm64-v8a
