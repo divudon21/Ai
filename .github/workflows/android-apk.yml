@@ -39,23 +39,20 @@ jobs:
             -dname "CN=Android Debug,O=Android,C=US" \
             -storepass android -keypass android
           printf 'storeFile=upload-key.jks\nstorePassword=android\nkeyAlias=upload-key\nkeyPassword=android\n' > android/key.properties
-      - name: Build APK (with retry)
+      - name: Build APK via Gradle
         run: |
-          for i in 1 2 3; do
-            echo "=== Build attempt $i ==="
-            flutter build apk --release --stacktrace && break
-            echo "=== Attempt $i failed, retrying in 10s ==="
-            sleep 10
-          done
-      - name: Find and copy APK
-        run: |
-          echo "=== All APK files found ==="
+          cd android
+          echo "=== Running Gradle assembleRelease ==="
+          gradle assembleRelease --stacktrace 2>&1 | tee /tmp/gradle_output.log
+          echo "=== Gradle exit code: ${PIPESTATUS[0]} ==="
+          echo "=== Searching for APK ==="
           find . -name "*.apk" -type f 2>/dev/null || echo "No APKs found"
-          echo "=== Looking in build/ ==="
-          find build -name "*.apk" -type f 2>/dev/null || echo "No APKs in build/"
-          APK_PATH=$(find . -name "app-release.apk" -type f 2>/dev/null | head -1)
+      - name: Copy APK to known location
+        run: |
+          APK_PATH=$(find android/build -name "app-release.apk" -type f 2>/dev/null | head -1)
           if [ -z "$APK_PATH" ]; then
-            echo "ERROR: app-release.apk not found!"
+            echo "ERROR: No APK found in android/build!"
+            find . -name "*.apk" -type f 2>/dev/null || true
             exit 1
           fi
           echo "Found APK: $APK_PATH"
