@@ -39,25 +39,19 @@ jobs:
             -dname "CN=Android Debug,O=Android,C=US" \
             -storepass android -keypass android
           printf 'storeFile=upload-key.jks\nstorePassword=android\nkeyAlias=upload-key\nkeyPassword=android\n' > android/key.properties
-      - name: Build APKs (split per ABI)
-        run: flutter build apk --release --split-per-abi --stacktrace
+      - name: Build fat APK (all ABIs)
+        run: flutter build apk --release --stacktrace
       - name: Build universal APK
         run: flutter build apk --release --universal --stacktrace
       - name: List produced APKs
         run: |
           echo "=== APKs in build/app/outputs/flutter-apk/ ==="
           ls -la build/app/outputs/flutter-apk/
-      - name: Upload arm64-v8a APK
+      - name: Upload fat APK
         uses: actions/upload-artifact@v4
         with:
-          name: apk-arm64-v8a
-          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
-          if-no-files-found: warn
-      - name: Upload armeabi-v7a APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: apk-armeabi-v7a
-          path: build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+          name: apk-fat
+          path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: warn
       - name: Upload universal APK
         uses: actions/upload-artifact@v4
@@ -72,8 +66,7 @@ jobs:
           name: "AI Agent Downloader APKs"
           tag_name: "apk-${{ github.run_id }}"
           files: |
-            build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
-            build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+            build/app/outputs/flutter-apk/app-release.apk
             build/app/outputs/flutter-apk/app-universal-release.apk
           fail_on_unmatched_files: false
         env:
