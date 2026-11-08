@@ -22,6 +22,12 @@ jobs:
           echo "flutter.sdk=$FLUTTER_DIR" > android/local.properties
       - run: yes | flutter doctor --android-licenses
       - run: flutter pub get
+      - name: Install Gradle 8.0
+        run: |
+          curl -fsSL --retry 3 "https://services.gradle.org/distributions/gradle-8.0-bin.zip" -o /tmp/gradle.zip
+          unzip -q /tmp/gradle.zip -d /tmp
+          echo "/tmp/gradle-8.0/bin" >> $GITHUB_PATH
+          gradle --version
       - name: Create release signing keystore + key.properties
         run: |
           keytool -genkeypair -v \
