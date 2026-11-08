@@ -38,25 +38,23 @@ jobs:
       - name: Get Flutter dependencies
         run: flutter pub get
 
-      - name: Generate Gradle wrapper (runner has Gradle preinstalled)
+      - name: Install Gradle 8.5 (runner has full internet)
         run: |
-          cd android
-          gradle wrapper --gradle-version 8.5
+          GRADLE_VERSION=8.5
+          curl -fsSL -o /tmp/gradle.zip "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip"
+          unzip -q /tmp/gradle.zip -d /tmp
+          echo "GRADLE_HOME=/tmp/gradle-${GRADLE_VERSION}" >> "$GITHUB_ENV"
+          echo "/tmp/gradle-${GRADLE_VERSION}/bin" >> "$GITHUB_PATH"
+          gradle --version
 
-      - name: Create release signing keystore + key.properties
+      - name: Provide ./gradlew (delegate to installed Gradle)
         run: |
-          keytool -genkeypair -v \
-            -keystore android/app/upload-key.jks \
-            -alias upload-key \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -dname "CN=Android Debug,O=Android,C=US" \
-            -storepass android -keypass android
-          cat > android/app/key.properties <<EOF
-          storeFile=upload-key.jks
-          storePassword=android
-          keyAlias=upload-key
-          keyPassword=android
-          EOF
+          cat > android/gradlew <<'SH'
+#!/bin/sh
+# Delegate to the Gradle installed above (no wrapper jar download needed).
+exec "${GRADLE_HOME:-/tmp/gradle-8.5}/bin/gradle" "$@"
+SH
+          chmod +x android/gradlew
 
       - name: Build split APKs (armeabi-v7a + arm64-v8a)
         run: flutter build apk --split-per-abi --release
@@ -80,16 +78,16 @@ jobs:
             Built from commit `${{ github.sha }}` on branch `${{ github.ref_name }}`.
 
             APKs included:
-            - `app-arm64-v8a-release.apk`  (64-bit ARM)
-            - `app-armeabi-v7a-release.apk` (32-bit ARM / arm7rb)
+            - `app-arm64-v8a-release.apk`  (64-bit ARM / arm64-v8a)
+            - `app-armeabi-v7a-release.apk` (32-bit ARM / arm7rb / armeabi-v7a)
             - `app-release.apk`              (universal / fat APK)
 
             Install any one on your Android device (enable "Install unknown apps" for your browser/file manager).
 
             Server URL is configurable in the app Settings — nothing is hardcoded.
-          files: |
-            build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
-            build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
-            build/app/outputs/flutter-apk/app-release.apk
+        files: |
+          build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+          build/app/outputs/flutter-apk/app-release.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
