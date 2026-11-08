@@ -19,8 +19,10 @@ android/app/key.properties
 android/app/upload-key.jks
 android/app/build/
 android/gradle/
-android/gradlew
-android/gradlew.bat
+!android/gradle/wrapper/gradle-wrapper.properties
+
+# Gradle wrapper (committed so `flutter build apk` can invoke Gradle)
+!android/gradlew
 
 # Flutter generated
 android/app/src/main/java/io/flutter/plugins/generated_plugin_registrant.java
