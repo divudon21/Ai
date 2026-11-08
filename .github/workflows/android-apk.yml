@@ -39,28 +39,30 @@ jobs:
             -dname "CN=Android Debug,O=Android,C=US" \
             -storepass android -keypass android
           printf 'storeFile=upload-key.jks\nstorePassword=android\nkeyAlias=upload-key\nkeyPassword=android\n' > android/key.properties
-      - name: Build APK arm64-v8a
+      - name: Build APK arm64-v8a (verbose)
         run: |
           echo "=== Building arm64-v8a APK ==="
-          flutter build apk --release --target-platform android-arm64 --stacktrace 2>&1 | tee /tmp/flutter_build.log
+          flutter build apk --release --target-platform android-arm64 --verbose 2>&1 | tee /tmp/flutter_build.log
           echo "=== Flutter build exit: ${PIPESTATUS[0]} ==="
-          echo "=== Flutter output mentioning apk ==="
-          grep -i 'apk\|built\|output' /tmp/flutter_build.log | head -30 || true
-      - name: List ALL files in build outputs
+          echo "=== Last 50 lines of Flutter output ==="
+          tail -50 /tmp/flutter_build.log
+      - name: List ALL build output files
         run: |
-          echo "=== Recursive listing of build/app/outputs ==="
+          echo "=== All files in build/app/outputs ==="
           find build/app/outputs -type f 2>/dev/null || echo "No build/app/outputs"
-          echo "=== All .apk files in workspace ==="
-          find . -name "*.apk" -type f 2>/dev/null || echo "No APKs found"
-          echo "=== All files in build/ ==="
+          echo "=== All .apk files anywhere ==="
+          find . -name "*.apk" -type f 2>/dev/null || echo "No .apk files"
+          echo "=== All .aab files anywhere ==="
+          find . -name "*.aab" -type f 2>/dev/null || echo "No .aab files"
+          echo "=== All files in build/ (first 50) ==="
           find build -type f 2>/dev/null | head -50 || echo "No files in build/"
       - name: Find APK anywhere
         run: |
           APK_PATH=$(find . -name "*.apk" -type f 2>/dev/null | head -1)
           if [ -z "$APK_PATH" ]; then
-            echo "ERROR: No APK found anywhere in workspace!"
-            echo "=== Dumping flutter build log ==="
-            cat /tmp/flutter_build.log || true
+            echo "ERROR: No APK found anywhere!"
+            echo "=== Flutter build log ==="
+            cat /tmp/flutter_build.log
             exit 1
           fi
           echo "FOUND_APK=$APK_PATH" >> $GITHUB_ENV
