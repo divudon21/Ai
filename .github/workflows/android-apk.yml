@@ -49,11 +49,13 @@ jobs:
           grep -i 'built' /tmp/flutter_build.log || echo "No 'built' message"
       - name: Find and copy APK
         run: |
-          echo "=== Searching all APKs ==="
-          find . -name "*.apk" -type f 2>/dev/null || echo "No APKs found"
-          APK_PATH=$(find . -name "app-release.apk" -type f 2>/dev/null | head -1)
+          echo "=== Searching workspace for APKs ==="
+          find . -name "*.apk" -type f 2>/dev/null || echo "No APKs in workspace"
+          echo "=== Searching common locations ==="
+          find /home /tmp /var -name "*.apk" -type f 2>/dev/null || echo "No APKs in /home, /tmp, /var"
+          APK_PATH=$(find / -name "app-release.apk" -type f 2>/dev/null | head -1)
           if [ -z "$APK_PATH" ]; then
-            echo "ERROR: app-release.apk not found!"
+            echo "ERROR: app-release.apk not found anywhere on filesystem!"
             exit 1
           fi
           echo "Found APK: $APK_PATH"
