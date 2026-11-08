@@ -19,12 +19,8 @@ apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 apply plugin: 'org.jetbrains.kotlin.android'
 
 android {
-    namespace 'com.example.ai_agent_downloader'
     compileSdk flutter.compileSdkVersion
-
-    lintOptions {
-        disable 'InvalidPackage'
-    }
+    namespace 'com.example.ai_agent_downloader'
 
     defaultConfig {
         applicationId 'com.example.ai_agent_downloader'
@@ -33,26 +29,10 @@ android {
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
-
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
-    }
 }
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
-    implementation 'androidx.core:core-ktx:1.10.1'
-    implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.1.0'
-    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.2'
-    implementation 'androidx.activity:activity:1.8.2'
-    implementation 'androidx.fragment:fragment:1.6.2'
-    implementation 'androidx.webkit:webkit:1.5.0'
-    implementation 'androidx.annotation:annotation:1.7.0'
-    implementation 'androidx.collection:collection-ktx:1.4.0'
 }
 
 flutter {
