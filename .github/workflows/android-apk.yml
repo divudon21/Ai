@@ -39,8 +39,8 @@ jobs:
             -dname "CN=Android Debug,O=Android,C=US" \
             -storepass android -keypass android
           printf 'storeFile=upload-key.jks\nstorePassword=android\nkeyAlias=upload-key\nkeyPassword=android\n' > android/key.properties
-      - name: Build APKs (fat APK, all ABIs)
-        run: flutter build apk --release --verbose
+      - name: Clean and Build APKs
+        run: flutter clean && flutter build apk --release --verbose
       - name: Build universal APK
         run: flutter build apk --release --universal --verbose
       - name: List produced APKs
