@@ -39,8 +39,23 @@ jobs:
             -dname "CN=Android Debug,O=Android,C=US" \
             -storepass android -keypass android
           printf 'storeFile=upload-key.jks\nstorePassword=android\nkeyAlias=upload-key\nkeyPassword=android\n' > android/key.properties
-      - name: Build APKs
-        run: flutter build apk --release --verbose
+      - name: Build APKs (capture error to file)
+        run: |
+          set +e
+          flutter build apk --release --verbose 2>&1 | tee /tmp/build.log
+          BUILD_EXIT=$?
+          echo "=== BUILD EXIT CODE: $BUILD_EXIT ===" >> /tmp/build.log
+          cp /tmp/build.log build-error.log
+          exit $BUILD_EXIT
+      - name: Commit error log (always)
+        if: always()
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/divudon21/Ai.git
+          git add build-error.log
+          git commit -m "Capture Gradle error log [skip ci]" || true
+          git push origin HEAD:arena/59d42030-ai || true
       - name: List produced APKs
         run: |
           echo "=== APKs in build/app/outputs/flutter-apk/ ==="
