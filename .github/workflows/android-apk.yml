@@ -17,6 +17,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          flutter-version: '3.22.0'
       - run: |
           FLUTTER_DIR="$(dirname "$(dirname "$(which flutter)")")"
           echo "flutter.sdk=$FLUTTER_DIR" > android/local.properties
