@@ -33,6 +33,19 @@ jobs:
           printf 'storeFile=upload-key.jks\nstorePassword=android\nkeyAlias=upload-key\nkeyPassword=android\n' > android/app/key.properties
       - run: flutter build apk --split-per-abi --release
       - run: flutter build apk --release
+      - name: List produced APKs
+        run: |
+          echo "=== APKs in build/app/outputs/flutter-apk/ ==="
+          ls -la build/app/outputs/flutter-apk/
+      - name: Upload APKs as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: apks
+          path: |
+            build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+            build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+            build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: warn
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: "v${{ github.run_number }}"
