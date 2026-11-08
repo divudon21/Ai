@@ -47,32 +47,29 @@ jobs:
             echo "=== Attempt $i failed, retrying in 10s ==="
             sleep 10
           done
-      - name: Find APKs
+      - name: Copy APK to known location
         run: |
-          echo "=== Searching for APKs ==="
-          find build -name "*.apk" -type f 2>/dev/null || echo "No APKs found in build/"
-          find . -name "*.apk" -type f 2>/dev/null | head -20 || true
-      - name: List produced APKs (non-fatal)
-        run: |
-          echo "=== APKs in build/app/outputs/flutter-apk/ ==="
-          ls -la build/app/outputs/flutter-apk/ 2>/dev/null || echo "Directory not found, checking other paths"
-          ls -la build/app/outputs/apk/release/ 2>/dev/null || echo "Directory not found"
-        continue-on-error: true
+          APK_PATH=$(find build -name "app-release.apk" -type f 2>/dev/null | head -1)
+          if [ -z "$APK_PATH" ]; then
+            echo "ERROR: No APK found!"
+            exit 1
+          fi
+          echo "Found APK: $APK_PATH"
+          cp "$APK_PATH" ./app-release.apk
+          ls -la ./app-release.apk
       - name: Upload APK as artifact
         uses: actions/upload-artifact@v4
         with:
           name: apk
-          path: build/**/app-release.apk
-          if-no-files-found: warn
+          path: app-release.apk
+          if-no-files-found: error
       - name: Create GitHub Release
         if: github.ref == 'refs/heads/arena/59d42030-ai'
         uses: softprops/action-gh-release@v2
         with:
           name: "AI Agent Downloader APK"
           tag_name: "apk-${{ github.run_id }}"
-          files: |
-            build/app/outputs/flutter-apk/app-release.apk
-            build/app/outputs/apk/release/app-release.apk
+          files: app-release.apk
           fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
