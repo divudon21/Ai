@@ -1,4 +1,3 @@
-# Error capture workflow
 name: Build APKs & Create Release
 
 on:
@@ -40,30 +39,42 @@ jobs:
             -dname "CN=Android Debug,O=Android,C=US" \
             -storepass android -keypass android
           printf 'storeFile=upload-key.jks\nstorePassword=android\nkeyAlias=upload-key\nkeyPassword=android\n' > android/key.properties
-      - name: Build APKs (capture error to file)
-        run: |
-          set +e
-          flutter build apk --release --verbose 2>&1 | tee /tmp/build.log
-          BUILD_EXIT=$?
-          echo "=== BUILD EXIT CODE: $BUILD_EXIT ===" >> /tmp/build.log
-          cp /tmp/build.log build-error.log
-          exit $BUILD_EXIT
-      - name: Commit error log (always)
-        if: always()
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/divudon21/Ai.git
-          git add build-error.log
-          git commit -m "Capture Gradle error log [skip ci]" || true
-          git push origin HEAD:arena/59d42030-ai || true
+      - name: Build APKs (split per ABI)
+        run: flutter build apk --release --split-per-abi --verbose
+      - name: Build universal APK
+        run: flutter build apk --release --universal --verbose
       - name: List produced APKs
         run: |
           echo "=== APKs in build/app/outputs/flutter-apk/ ==="
-          ls -la build/app/outputs/flutter-apk/ || true
-      - name: Upload APK as artifact
+          ls -la build/app/outputs/flutter-apk/
+      - name: Upload arm64-v8a APK
         uses: actions/upload-artifact@v4
         with:
-          name: apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: apk-arm64-v8a
+          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
           if-no-files-found: warn
+      - name: Upload armeabi-v7a APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-armeabi-v7a
+          path: build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+          if-no-files-found: warn
+      - name: Upload universal APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-universal
+          path: build/app/outputs/flutter-apk/app-universal-release.apk
+          if-no-files-found: warn
+      - name: Create GitHub Release
+        if: github.ref == 'refs/heads/arena/59d42030-ai'
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "AI Agent Downloader APKs"
+          tag_name: "apk-${{ github.run_id }}"
+          files: |
+            build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+            build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+            build/app/outputs/flutter-apk/app-universal-release.apk
+          fail_on_unmatched_files: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
