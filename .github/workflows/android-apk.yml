@@ -3,7 +3,6 @@ name: Build APKs & Create Release
 on:
   push:
     branches: [ arena/1473ca97-ai ]
-  workflow_dispatch:
 
 jobs:
   build-and-release:
