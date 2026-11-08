@@ -53,18 +53,6 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-
-    /// Build separate APKs per ABI with `flutter build apk --split-per-abi`.
-    /// Produces: app-armeabi-v7a-release.apk and app-arm64-v8a-release.apk.
-    /// A separate universal (fat) APK is produced by `flutter build apk`.
-    splits {
-        abi {
-            enable true
-            reset()
-            include 'armeabi-v7a', 'arm64-v8a'
-            universalApk false
-        }
-    }
 }
 
 dependencies {
