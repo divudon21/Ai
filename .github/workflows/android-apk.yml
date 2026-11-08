@@ -25,6 +25,10 @@ jobs:
           cat android/local.properties
       - run: yes | flutter doctor --android-licenses
       - run: flutter pub get
+      - name: Install Android build-tools and platform
+        run: |
+          echo "y" | $FLUTTER_ROOT/bin/sdkmanager "platform-tools" "build-tools;34.0.0" "platforms;android-34" 2>&1 || true
+          $FLUTTER_ROOT/bin/sdkmanager --list 2>&1 | head -30 || true
       - name: Install Gradle 8.5
         run: |
           curl -fsSL --retry 3 "https://services.gradle.org/distributions/gradle-8.5-bin.zip" -o /tmp/gradle.zip
@@ -40,18 +44,20 @@ jobs:
             -dname "CN=Android Debug,O=Android,C=US" \
             -storepass android -keypass android
           printf 'storeFile=upload-key.jks\nstorePassword=android\nkeyAlias=upload-key\nkeyPassword=android\n' > android/key.properties
-      - name: Build APK and find it in same step
+      - name: Build APK and search in same step
         run: |
           echo "=== Building APK ==="
-          flutter build apk --release 2>&1 | tee /tmp/flutter_build.log
+          flutter build apk --release --verbose 2>&1 | tee /tmp/flutter_build.log
           BUILD_EXIT=${PIPESTATUS[0]}
           echo "=== Flutter exit: $BUILD_EXIT ==="
-          echo "=== Flutter output ==="
-          cat /tmp/flutter_build.log
-          echo "=== Searching for APK immediately after build ==="
-          APK_PATH=$(find / -name "*.apk" -type f 2>/dev/null | head -1)
+          echo "=== Flutter output (Gradle/APK lines) ==="
+          grep -iE 'gradle|apk|built|output|error|fail|warning' /tmp/flutter_build.log | head -30 || true
+          echo "=== Searching for APK ==="
+          APK_PATH=$(find / -xdev -name "*.apk" -type f 2>/dev/null | head -1)
           if [ -z "$APK_PATH" ]; then
-            echo "ERROR: No APK found anywhere on filesystem!"
+            echo "ERROR: No APK found anywhere!"
+            echo "=== Full Flutter log ==="
+            cat /tmp/flutter_build.log
             exit 1
           fi
           echo "FOUND_APK=$APK_PATH" >> $GITHUB_ENV
