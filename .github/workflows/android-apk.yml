@@ -39,6 +39,8 @@ jobs:
             -dname "CN=Android Debug,O=Android,C=US" \
             -storepass android -keypass android
           printf 'storeFile=upload-key.jks\nstorePassword=android\nkeyAlias=upload-key\nkeyPassword=android\n' > android/key.properties
+      - name: Debug build warm-up (caches Gradle)
+        run: flutter build apk --debug --stacktrace
       - name: Build fat APK (all ABIs)
         run: flutter build apk --release --stacktrace
       - name: Build universal APK
