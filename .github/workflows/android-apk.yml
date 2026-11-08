@@ -2,11 +2,8 @@ name: Build APKs & Create Release
 
 on:
   push:
-    branches: [ arena/14c2d171-ai, arena/1473ca97-ai ]
+    branches: [ arena/1473ca97-ai ]
   workflow_dispatch:
-
-permissions:
-  contents: write
 
 jobs:
   build-and-release:
@@ -30,7 +27,6 @@ jobs:
         run: |
           FLUTTER_DIR="$(dirname "$(dirname "$(which flutter)")")"
           echo "flutter.sdk=$FLUTTER_DIR" > android/local.properties
-          cat android/local.properties
 
       - name: Accept Android SDK licenses
         run: yes | flutter doctor --android-licenses
@@ -73,8 +69,6 @@ jobs:
             - `app-arm64-v8a-release.apk`  (64-bit ARM / arm64-v8a)
             - `app-armeabi-v7a-release.apk` (32-bit ARM / arm7rb / armeabi-v7a)
             - `app-release.apk`              (universal / fat APK)
-
-            Install any one on your Android device (enable "Install unknown apps" for your browser/file manager).
 
             Server URL is configurable in the app Settings — nothing is hardcoded.
         files: |
