@@ -13,18 +13,19 @@ def flutterVersionCode = localProperties.getProperty('flutterVersionCode')
 if (flutterVersionCode == null) {
     flutterVersionCode = '1'
 }
+
 def flutterVersionName = localProperties.getProperty('flutterVersionName')
 if (flutterVersionName == null) {
     flutterVersionName = '1.0'
 }
 
 apply plugin: 'com.android.application'
-apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 apply plugin: 'org.jetbrains.kotlin.android'
+apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 
 android {
     compileSdk flutter.compileSdkVersion
-    namespace 'com.example.ai_agent_downloader'
+    ndkVersion flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -35,8 +36,12 @@ android {
         jvmTarget = '1.8'
     }
 
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+    }
+
     defaultConfig {
-        applicationId 'com.example.ai_agent_downloader'
+        applicationId "com.example.ai_agent_downloader"
         minSdkVersion flutter.minSdkVersion
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
@@ -46,33 +51,12 @@ android {
     buildTypes {
         release {
             signingConfig signingConfigs.debug
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
-        debug {
-            signingConfig signingConfigs.debug
-        }
-    }
-
-    // Configure release signing from key.properties (created by CI workflow)
-    def keystoreFile = rootProject.file('key.properties')
-    if (keystoreFile.exists()) {
-        def keyProperties = new Properties()
-        keystoreFile.withReader('UTF-8') { keyProperties.load(it) }
-        signingConfigs {
-            release {
-                keyAlias keyProperties['keyAlias']
-                keyPassword keyProperties['keyPassword']
-                storeFile rootProject.file(keyProperties['storeFile'])
-                storePassword keyProperties['storePassword']
-            }
-        }
-        buildTypes.release.signingConfig = signingConfigs.release
     }
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.20"
 }
 
 flutter {

@@ -33,9 +33,10 @@ jobs:
             -dname "CN=Android Debug,O=Android,C=US" \
             -storepass android -keypass android
           printf 'storeFile=upload-key.jks\nstorePassword=android\nkeyAlias=upload-key\nkeyPassword=android\n' > android/key.properties
-      - run: flutter build apk --release --split-per-abi
+      - name: Build APKs (verbose stacktrace)
+        run: flutter build apk --release --split-per-abi --stacktrace --info
       - name: Build universal APK
-        run: flutter build apk --release --universal
+        run: flutter build apk --release --universal --stacktrace --info
       - name: List produced APKs
         run: |
           echo "=== APKs in build/app/outputs/flutter-apk/ ==="
