@@ -5,13 +5,16 @@
 set -e
 
 GRADLE_VERSION=8.5
-GRADLE_DIR="/tmp/gradle-${GRADLE_VERSION}"
+GRADLE_DIR="${GRADLE_HOME:-/tmp/gradle-${GRADLE_VERSION}}"
 GRADLE_BIN="$GRADLE_DIR/bin/gradle"
 
 if [ ! -x "$GRADLE_BIN" ]; then
   echo "Downloading Gradle ${GRADLE_VERSION} ..." >&2
   rm -rf /tmp/gradle-*
-  curl -fsSL --retry 3 "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" -o /tmp/gradle.zip
+  mkdir -p "$GRADLE_DIR"
+  curl -fsSL --retry 5 --retry-delay 5 \
+    "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" \
+    -o /tmp/gradle.zip
   unzip -q /tmp/gradle.zip -d /tmp
   rm -f /tmp/gradle.zip
   if [ ! -x "$GRADLE_BIN" ]; then

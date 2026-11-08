@@ -5,8 +5,17 @@ if (localPropertiesFile.exists()) {
 }
 
 def flutterRoot = localProperties.getProperty('flutter.sdk') ?: 'flutter'
-
 load from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
+
+def flutterVersionCode = localProperties.getProperty('flutterVersionCode')
+if (flutterVersionCode == null) {
+    flutterVersionCode = '1'
+}
+
+def flutterVersionName = localProperties.getProperty('flutterVersionName')
+if (flutterVersionName == null) {
+    flutterVersionName = '1.0'
+}
 
 def keyPropertiesFile = rootProject.file('key.properties')
 def keyProperties = new Properties()
@@ -15,7 +24,6 @@ if (keyPropertiesFile.exists()) {
 }
 
 apply plugin: 'com.android.application'
-apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 apply plugin: 'org.jetbrains.kotlin.android'
 
 android {
@@ -51,18 +59,6 @@ android {
             signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
-    }
-
-    /// Build separate APKs per ABI with `flutter build apk --split-per-abi`.
-    /// Produces: app-armeabi-v7a-release.apk and app-arm64-v8a-release.apk.
-    /// A separate universal (fat) APK is produced by `flutter build apk`.
-    splits {
-        abi {
-            enable true
-            reset()
-            include 'armeabi-v7a', 'arm64-v8a'
-            universalApk false
         }
     }
 }
