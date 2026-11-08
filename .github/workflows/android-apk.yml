@@ -47,33 +47,24 @@ jobs:
             echo "=== Attempt $i failed, retrying in 10s ==="
             sleep 10
           done
-      - name: Build universal APK
-        run: flutter build apk --release --universal --stacktrace
       - name: List produced APKs
         run: |
           echo "=== APKs in build/app/outputs/flutter-apk/ ==="
           ls -la build/app/outputs/flutter-apk/
-      - name: Upload fat APK
+      - name: Upload APK as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: apk-fat
+          name: apk
           path: build/app/outputs/flutter-apk/app-release.apk
-          if-no-files-found: warn
-      - name: Upload universal APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: apk-universal
-          path: build/app/outputs/flutter-apk/app-universal-release.apk
           if-no-files-found: warn
       - name: Create GitHub Release
         if: github.ref == 'refs/heads/arena/59d42030-ai'
         uses: softprops/action-gh-release@v2
         with:
-          name: "AI Agent Downloader APKs"
+          name: "AI Agent Downloader APK"
           tag_name: "apk-${{ github.run_id }}"
           files: |
             build/app/outputs/flutter-apk/app-release.apk
-            build/app/outputs/flutter-apk/app-universal-release.apk
           fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
