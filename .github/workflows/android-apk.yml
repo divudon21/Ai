@@ -5,6 +5,9 @@ on:
     branches: [ arena/59d42030-ai ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
