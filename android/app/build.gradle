@@ -17,7 +17,7 @@ if (flutterVersionName == null) {
     flutterVersionName = '1.0'
 }
 
-def keyPropertiesFile = rootProject.file('key.properties')
+def keyPropertiesFile = file('key.properties')
 def keyProperties = new Properties()
 if (keyPropertiesFile.exists()) {
     keyPropertiesFile.withReader('UTF-8') { keyProperties.load(it) }
