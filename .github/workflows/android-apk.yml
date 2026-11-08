@@ -22,16 +22,37 @@ jobs:
       - run: |
           echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
           cat android/local.properties
-      - run: yes | flutter doctor --android-licenses
-      - run: flutter pub get
+      - name: Diagnostics - Flutter version
+        run: |
+          echo "=== Flutter version ==="
+          flutter --version
+          echo "=== Java version ==="
+          java -version
+          echo "=== Flutter doctor ==="
+          flutter doctor -v
+      - name: Accept Android licenses
+        run: yes | flutter doctor --android-licenses
+      - name: Diagnostics - After licenses
+        run: |
+          echo "=== Licenses done, starting pub get ==="
+          date
+      - name: Flutter pub get
+        run: |
+          echo "=== Starting flutter pub get ==="
+          date
+          flutter pub get --verbose
+          echo "=== Pub get exit code: $? ==="
+          date
       - name: Install Gradle 8.5
         run: |
+          echo "=== Installing Gradle ==="
           curl -fsSL --retry 3 "https://services.gradle.org/distributions/gradle-8.5-bin.zip" -o /tmp/gradle.zip
           unzip -q /tmp/gradle.zip -d /tmp
           echo "/tmp/gradle-8.5/bin" >> $GITHUB_PATH
           gradle --version
       - name: Create release signing keystore + key.properties
         run: |
+          echo "=== Creating keystore ==="
           keytool -genkeypair -v \
             -keystore android/upload-key.jks \
             -alias upload-key \
@@ -39,35 +60,12 @@ jobs:
             -dname "CN=Android Debug,O=Android,C=US" \
             -storepass android -keypass android
           printf 'storeFile=upload-key.jks\nstorePassword=android\nkeyAlias=upload-key\nkeyPassword=android\n' > android/key.properties
-      - name: Clean and Build APKs
-        run: flutter clean && flutter build apk --release --verbose
-      - name: Build universal APK
-        run: flutter build apk --release --universal --verbose
-      - name: List produced APKs
+          cat android/key.properties
+      - name: Build APK
         run: |
-          echo "=== APKs in build/app/outputs/flutter-apk/ ==="
-          ls -la build/app/outputs/flutter-apk/
-      - name: Upload fat APK (all ABIs)
-        uses: actions/upload-artifact@v4
-        with:
-          name: apk-fat
-          path: build/app/outputs/flutter-apk/app-release.apk
-          if-no-files-found: warn
-      - name: Upload universal APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: apk-universal
-          path: build/app/outputs/flutter-apk/app-universal-release.apk
-          if-no-files-found: warn
-      - name: Create GitHub Release
-        if: github.ref == 'refs/heads/arena/59d42030-ai'
-        uses: softprops/action-gh-release@v2
-        with:
-          name: "AI Agent Downloader APKs"
-          tag_name: "apk-${{ github.run_id }}"
-          files: |
-            build/app/outputs/flutter-apk/app-release.apk
-            build/app/outputs/flutter-apk/app-universal-release.apk
-          fail_on_unmatched_files: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          echo "=== Starting flutter build apk ==="
+          date
+          flutter clean
+          flutter build apk --release --verbose
+          echo "=== Build exit code: $? ==="
+          date

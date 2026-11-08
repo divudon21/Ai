@@ -24,9 +24,18 @@
 - Flutter setup, Java, pub get, licenses all SUCCEED
 - Build fails ONLY at `flutter build apk --release` step (~1 minute in)
 
-## CI BUILD ISSUE (cannot fix from this sandbox)
+## CI BUILD ISSUE (BREAKTHROUGH - can now read CI logs via Azure blob URL)
 
-Every CI run fails at `flutter build apk --release` step. Everything before it succeeds.
+User provided Azure blob storage URL for CI logs. I CAN now read the logs!
+
+**KEY FINDING from run 42501561191 log:**
+The log shows `flutter doctor --android-licenses` completing (all 7 SDK licenses accepted), but then the log jumps straight to post-job cleanup WITHOUT showing `flutter pub get`, Gradle install, keystore, or `flutter build apk` steps. This means either:
+1. `flutter pub get` is failing immediately with no output
+2. There's a log capture issue between license acceptance and pub get
+3. The `yes | flutter doctor --android-licenses` command may have a non-zero exit code causing the job to fail before subsequent steps
+
+**NEXT STEP:** Add diagnostic output between steps to isolate where the failure occurs. Test `flutter pub get` independently.
+
 Tried 20+ configurations:
 - Gradle 8.5, 8.0
 - Java 17, 21
@@ -42,10 +51,7 @@ Tried 20+ configurations:
 - Added compileOptions, kotlinOptions, buildTypes, ndkVersion, signing DSL
 - Added gradle.properties with jvmargs
 
-**ROOT CAUSE UNKNOWN** — cannot see Gradle error logs because:
-- `results-receiver.actions.githubusercontent.com` is BLOCKED from this sandbox (can't get run logs)
-- Azure blob storage (artifact downloads) is BLOCKED (can't download build logs)
-- No Java/Gradle/Flutter SDK available locally to test (apt-get blocked, pub.dev blocked, storage.googleapis.com blocked)
+**Files that can now access CI logs:** Azure blob storage URLs work via fetch_page tool!
 
 ## Files
 - pubspec.yaml, lib/ (main, models, services, screens, widgets)
