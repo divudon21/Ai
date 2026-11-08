@@ -24,50 +24,14 @@ jobs:
           cat android/local.properties
       - run: yes | flutter doctor --android-licenses
       - run: flutter pub get
-      - name: Create release signing keystore + key.properties
-        run: |
-          keytool -genkeypair -v \
-            -keystore android/upload-key.jks \
-            -alias upload-key \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -dname "CN=Android Debug,O=Android,C=US" \
-            -storepass android -keypass android
-          printf 'storeFile=upload-key.jks\nstorePassword=android\nkeyAlias=upload-key\nkeyPassword=android\n' > android/key.properties
-      - run: flutter build apk --release --split-per-abi
-      - name: Build universal APK
-        run: flutter build apk --release --universal
+      - run: flutter build apk
       - name: List produced APKs
         run: |
           echo "=== APKs in build/app/outputs/flutter-apk/ ==="
-          ls -la build/app/outputs/flutter-apk/
-      - name: Upload arm64-v8a APK
+          ls -la build/app/outputs/flutter-apk/ || true
+      - name: Upload APK as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: apk-arm64-v8a
-          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          name: apk-debug
+          path: build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: warn
-      - name: Upload armeabi-v7a APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: apk-armeabi-v7a
-          path: build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
-          if-no-files-found: warn
-      - name: Upload universal APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: apk-universal
-          path: build/app/outputs/flutter-apk/app-universal-release.apk
-          if-no-files-found: warn
-      - name: Create GitHub Release
-        if: github.ref == 'refs/heads/arena/59d42030-ai'
-        uses: softprops/action-gh-release@v2
-        with:
-          name: "AI Agent Downloader APKs"
-          tag_name: "apk-${{ github.run_id }}"
-          files: |
-            build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
-            build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
-            build/app/outputs/flutter-apk/app-universal-release.apk
-          fail_on_unmatched_files: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
