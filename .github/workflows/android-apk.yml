@@ -40,36 +40,25 @@ jobs:
             -dname "CN=Android Debug,O=Android,C=US" \
             -storepass android -keypass android
           printf 'storeFile=upload-key.jks\nstorePassword=android\nkeyAlias=upload-key\nkeyPassword=android\n' > android/key.properties
-      - name: Build APK with Flutter
+      - name: Build APK and find it in same step
         run: |
           echo "=== Building APK ==="
-          flutter build apk --release --verbose 2>&1 | tee /tmp/flutter_build.log
-          echo "=== Flutter exit: ${PIPESTATUS[0]} ==="
-          echo "=== Flutter output mentioning APK/Gradle/Built ==="
-          grep -iE 'apk|gradle|built|output|wrote|writing' /tmp/flutter_build.log | head -20 || echo "No matches"
-      - name: Search for APK everywhere
-        run: |
-          echo "=== Searching common dirs for APKs ==="
-          find /home /tmp /workspace $FLUTTER_ROOT -name "*.apk" -type f 2>/dev/null || echo "No APKs in common dirs"
-          echo "=== All files in build/app/outputs ==="
-          find build/app/outputs -type f 2>/dev/null || echo "No build/app/outputs"
-          echo "=== All files in android/build ==="
-          find android/build -type f 2>/dev/null || echo "No android/build"
-      - name: Copy APK if found
-        run: |
-          APK_PATH=$(find /home /tmp /workspace $FLUTTER_ROOT -name "*.apk" -type f 2>/dev/null | head -1)
+          flutter build apk --release 2>&1 | tee /tmp/flutter_build.log
+          BUILD_EXIT=${PIPESTATUS[0]}
+          echo "=== Flutter exit: $BUILD_EXIT ==="
+          echo "=== Flutter output ==="
+          cat /tmp/flutter_build.log
+          echo "=== Searching for APK immediately after build ==="
+          APK_PATH=$(find / -name "*.apk" -type f 2>/dev/null | head -1)
           if [ -z "$APK_PATH" ]; then
-            APK_PATH=$(find . -name "*.apk" -type f 2>/dev/null | head -1)
-          fi
-          if [ -z "$APK_PATH" ]; then
-            echo "ERROR: No APK found anywhere!"
-            echo "=== Flutter build log ==="
-            cat /tmp/flutter_build.log
+            echo "ERROR: No APK found anywhere on filesystem!"
             exit 1
           fi
           echo "FOUND_APK=$APK_PATH" >> $GITHUB_ENV
           echo "Found APK: $APK_PATH"
-          cp "$APK_PATH" ./app-release.apk
+      - name: Copy APK to root
+        run: |
+          cp "${{ env.FOUND_APK }}" ./app-release.apk
           ls -la ./app-release.apk
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
