@@ -49,10 +49,11 @@ jobs:
           find . -name "*.apk" -type f 2>/dev/null || echo "No APKs found"
       - name: Copy APK to known location
         run: |
-          APK_PATH=$(find android/build -name "app-release.apk" -type f 2>/dev/null | head -1)
+          echo "=== All APK files in workspace ==="
+          find . -name "*.apk" -type f 2>/dev/null || echo "No APKs found anywhere"
+          APK_PATH=$(find . -name "app-release.apk" -type f 2>/dev/null | head -1)
           if [ -z "$APK_PATH" ]; then
-            echo "ERROR: No APK found in android/build!"
-            find . -name "*.apk" -type f 2>/dev/null || true
+            echo "ERROR: app-release.apk not found anywhere!"
             exit 1
           fi
           echo "Found APK: $APK_PATH"
