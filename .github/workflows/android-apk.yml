@@ -13,7 +13,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: '21'
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
@@ -38,7 +38,7 @@ jobs:
             -dname "CN=Android Debug,O=Android,C=US" \
             -storepass android -keypass android
           printf 'storeFile=upload-key.jks\nstorePassword=android\nkeyAlias=upload-key\nkeyPassword=android\n' > android/key.properties
-      - run: flutter build apk --release
+      - run: flutter build apk
       - name: List produced APKs
         run: |
           echo "=== APKs in build/app/outputs/flutter-apk/ ==="
