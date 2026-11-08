@@ -5,9 +5,6 @@ on:
     branches: [ arena/59d42030-ai ]
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
@@ -45,19 +42,3 @@ jobs:
           name: apk
           path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: warn
-      - uses: softprops/action-gh-release@v2
-        with:
-          tag_name: "v${{ github.run_number }}"
-          name: "AI Agent Downloader - v${{ github.run_number }}"
-          body: |
-            AI Agent Downloader - APK Release
-
-            Built from commit `${{ github.sha }}` on branch `${{ github.ref_name }}`.
-
-            APK included:
-            - `app-release.apk` (universal / fat APK)
-
-            Server URL is configurable in the app Settings — nothing is hardcoded.
-        files: build/app/outputs/flutter-apk/app-release.apk
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
